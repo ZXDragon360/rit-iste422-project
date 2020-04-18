@@ -5,6 +5,8 @@ import javax.swing.event.*;
 import javax.swing.filechooser.FileFilter;
 import java.io.*;
 import java.util.*;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
 import java.lang.reflect.*;
 
 public class EdgeConvertGUI {
@@ -147,8 +149,8 @@ public class EdgeConvertGUI {
       jmiDTHelpAbout.addActionListener(menuListener);
       jmDTHelp.add(jmiDTHelpAbout);
       
-      jfcEdge = new JFileChooser();
-      jfcOutputDir = new JFileChooser();
+      jfcEdge = new JFileChooser(".");
+      jfcOutputDir = new JFileChooser("..");
 	   effEdge = new ExampleFileFilter("edg", "Edge Diagrammer Files");
    	effSave = new ExampleFileFilter("sav", "Edge Convert Save Files");
       jfcOutputDir.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
@@ -961,15 +963,31 @@ public class EdgeConvertGUI {
    }
    
    private void getOutputClasses() {
-      File[] resultFiles;
+      File[] resultFiles = {};
       Class resultClass = null;
       Class[] paramTypes = {EdgeTable[].class, EdgeField[].class};
       Class[] paramTypesNull = {};
       Constructor conResultClass;
       Object[] args = {tables, fields};
       Object objOutput = null;
-
-      resultFiles = outputDir.listFiles();
+	
+      String classLocation = EdgeConvertGUI.class.getResource("EdgeConvertGUI.class").toString();
+      if (classLocation.startsWith("jar:")) {
+          String jarfilename = classLocation.replaceFirst("^.*:", "").replaceFirst("!.*$", "");
+          System.out.println("Jarfile: " + jarfilename);
+          try (JarFile jarfile = new JarFile(jarfilename)) {
+              ArrayList<File> filenames = new ArrayList<>();
+              for (JarEntry e : Collections.list(jarfile.entries())) {
+                  filenames.add(new File(e.getName()));
+              }
+              resultFiles = filenames.toArray(new File[0]);
+          } catch (IOException ioe) {
+              throw new RuntimeException(ioe);
+          }
+      } 
+      else {
+          resultFiles = outputDir.listFiles();
+      }
       alProductNames.clear();
       alSubclasses.clear();
       try {
@@ -982,6 +1000,7 @@ public class EdgeConvertGUI {
             if (resultClass.getSuperclass().getName().equals("EdgeConvertCreateDDL")) { //only interested in classes that extend EdgeConvertCreateDDL
                if (parseFile == null && saveFile == null) {
                   conResultClass = resultClass.getConstructor(paramTypesNull);
+                  objOutput = conResultClass.newInstance(null);
                   } else {
                   conResultClass = resultClass.getConstructor(paramTypes);
                   objOutput = conResultClass.newInstance(args);
