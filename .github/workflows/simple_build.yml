@@ -21,8 +21,8 @@ jobs:
       with:
         java-version: 1.8
     - name: Build Java Code
-      run: javac -cp lib/hamcrest-core-1.3.jar:lib/junit-4.12.jar *.java
+      run: javac -cp lib/hamcrest-core-1.3.jar:lib/junit-4.12.jar -d ./build src/main/java/*.java ; javac -cp lib/hamcrest-core-1.3.jar:lib/junit-4.12.jar/build -d ./build src/java/java/*.java
     - name: Run Unit Tests
-      run: java -cp .:lib/hamcrest-core-1.3.jar:lib/junit-4.12.jar org.junit.runner.JUnitCore EdgeConnectorTest
+      run: java -cp build.:lib/hamcrest-core-1.3.jar:lib/junit-4.12.jar org.junit.runner.JUnitCore EdgeConnectorTest
     - name: List files
       run: ls -l
